@@ -47,6 +47,8 @@ local toggles = {
    HighlightToggle = false,
 }
 
+local cachedPositions = {}
+
 -- ======= Highlight Function =======
 local function toggleHighlight(enable)
     for _, player in pairs(Players:GetPlayers()) do
@@ -81,7 +83,7 @@ local function killAllPlayers()
     end
 end
 
--- ======= Teleport All to You =======
+-- ======= Teleport All to You (cache original positions) =======
 local function teleportAllToMe()
     local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then
@@ -93,35 +95,63 @@ local function teleportAllToMe()
         return
     end
 
+    cachedPositions = {} -- clear old cache
+
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local humRoot = player.Character.HumanoidRootPart
+            cachedPositions[player.Name] = humRoot.CFrame -- store original position
+
             -- teleport slightly above you to avoid clipping
-            player.Character.HumanoidRootPart.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+            humRoot.CFrame = root.CFrame + Vector3.new(0, 5, 0)
         end
     end
 
     Rayfield:Notify({
         Title = "Teleport Complete",
-        Content = "All players have been teleported to you.",
+        Content = "All players teleported to you and their original positions cached.",
         Duration = 5
     })
 end
 
--- ======= Speed Control =======
-local currentSpeed = 16 -- default speed
+-- ======= Speed Input (textbox) =======
+local currentSpeed = 16
 
 local function updateWalkSpeed(speed)
-    localPlayer.CharacterAdded:Connect(function(character)
-        local humanoid = character:WaitForChild("Humanoid")
-        humanoid.WalkSpeed = speed
-    end)
+    if typeof(speed) ~= "number" then return end
+    currentSpeed = speed
 
-    if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
-        localPlayer.Character.Humanoid.WalkSpeed = speed
+    local function applySpeed(character)
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = speed
+        end
     end
+
+    if localPlayer.Character then
+        applySpeed(localPlayer.Character)
+    end
+
+    -- Apply on respawn
+    localPlayer.CharacterAdded:Connect(function(character)
+        character:WaitForChild("Humanoid").WalkSpeed = speed
+    end)
 end
 
 updateWalkSpeed(currentSpeed)
+
+-- ======= Player Size Slider =======
+local function setPlayerSize(size)
+    if localPlayer.Character then
+        for _, part in pairs(localPlayer.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Size = part.Size.Unit * size
+            end
+        end
+    end
+end
+
+-- Some players may have accessories that won't scale properly, this is a basic approach.
 
 -- ===== Tabs =====
 
@@ -157,15 +187,51 @@ PlayerTab:CreateButton({
    end,
 })
 
+PlayerTab:CreateInput({
+   Name = "Set Walk Speed",
+   PlaceholderText = "Type speed here (e.g. 50)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(text)
+       local speedNum = tonumber(text)
+       if speedNum then
+          updateWalkSpeed(speedNum)
+          Rayfield:Notify({
+              Title = "Speed Updated",
+              Content = "Your walk speed is now "..speedNum,
+              Duration = 4
+          })
+       else
+          Rayfield:Notify({
+              Title = "Invalid Input",
+              Content = "Please enter a valid number for speed!",
+              Duration = 4
+          })
+       end
+   end
+})
+
 PlayerTab:CreateSlider({
-   Name = "Walk Speed",
-   Range = {0, 500},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = currentSpeed,
+   Name = "Player Size",
+   Range = {0.5, 5},
+   Increment = 0.1,
+   Suffix = "x",
+   CurrentValue = 1,
    Callback = function(value)
-       currentSpeed = value
-       updateWalkSpeed(currentSpeed)
+       -- Scale character parts
+       if localPlayer.Character then
+           for _, part in pairs(localPlayer.Character:GetChildren()) do
+               if part:IsA("BasePart") then
+                   part.Size = part.Size.Unit * value
+               end
+           end
+       end
+   end,
+})
+
+PlayerTab:CreateButton({
+   Name = "Teleport Everyone To Me (Cache Positions)",
+   Callback = function()
+       teleportAllToMe()
    end,
 })
 
@@ -222,13 +288,6 @@ GardenTab:CreateButton({
 
 -- Troll Tab
 local TrollTab = Window:CreateTab("Troll", 17205450457)
-
-TrollTab:CreateButton({
-   Name = "Teleport Everyone To Me",
-   Callback = function()
-      teleportAllToMe()
-   end,
-})
 
 TrollTab:CreateButton({
    Name = "Kill All Players",
