@@ -255,6 +255,17 @@ AzureTab:CreateButton({
 local MiscTab = Window:CreateTab("Misc", 17205450457)
 
 MiscTab:CreateButton({
+   Name = "jerk(‿ˠ‿) Ɑ͞ ̶͞ ̶͞ ̶͞ لں͞",
+   Callback = function()
+     --[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))("Spider Script")
+   end,
+})
+
+
+MiscTab:CreateButton({
    Name = "Kawaii Fling",
    Callback = function()
       loadstring(game:HttpGet("https://raw.githubusercontent.com/hellohellohell012321/KAWAII-FREAKY-FLING/main/kawaii_freaky_fling.lua", true))()
