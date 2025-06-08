@@ -4,7 +4,7 @@ local Window = Rayfield:CreateWindow({
    Name = "Fembuy Hub",
    Icon = 93059603763570,
    LoadingTitle = "Loading Hub",
-   LoadingSubtitle = "by Manuel",
+   LoadingSubtitle = "Made by downies, for downies(Manuel)",
    Theme = "Default",
    ToggleUIKeybind = "K",
    DisableRayfieldPrompts = false,
@@ -41,68 +41,211 @@ Rayfield:Notify({
    Image = 4483362458,
 })
 
--- Home Tab (different icon)
-local HomeTab = Window:CreateTab("Home", 6023426915) -- example icon ID
+-- Helper to get local player and humanoid
+local function getHumanoid()
+   local player = game.Players.LocalPlayer
+   if player and player.Character then
+      return player.Character:FindFirstChildWhichIsA("Humanoid")
+   end
+   return nil
+end
+
+-- Home Tab
+local HomeTab = Window:CreateTab("Home", 17205450457)
 local HomeSection = HomeTab:CreateSection("Main")
 
+local infiniteYieldRunning = false
+
 HomeTab:CreateButton({
-   Name = "Infinite Yield",
+   Name = "Infinite Yield (Toggle)",
    Callback = function()
-      loadstring(game:HttpGet("https://cdn.wearedevs.net/scripts/Infinite%20Yield.txt"))()
+      if not infiniteYieldRunning then
+         loadstring(game:HttpGet("https://cdn.wearedevs.net/scripts/Infinite%20Yield.txt"))()
+         infiniteYieldRunning = true
+         Rayfield:Notify({
+            Title = "Infinite Yield",
+            Content = "Infinite Yield loaded!",
+            Duration = 3,
+            Image = 4483362458,
+         })
+      else
+         Rayfield:Notify({
+            Title = "Toggle Off Not Supported",
+            Content = "To disable Infinite Yield, please reload the game.",
+            Duration = 4,
+            Image = 4483362458,
+         })
+      end
    end,
 })
 
--- Player Tab (different icon)
-local PlayerTab = Window:CreateTab("Player", 6023426940) -- example icon ID
+-- Player Tab
+local PlayerTab = Window:CreateTab("Player", 17205450457)
 local PlayerSection = PlayerTab:CreateSection("Player Scripts")
 
+local invisibleRunning = false
+
 PlayerTab:CreateButton({
-   Name = "Invisible Script",
+   Name = "Invisible Script (Toggle)",
    Callback = function()
-      loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+      if not invisibleRunning then
+         loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+         invisibleRunning = true
+         Rayfield:Notify({
+            Title = "Invisible",
+            Content = "Invisible script enabled!",
+            Duration = 3,
+            Image = 4483362458,
+         })
+      else
+         -- Reset transparency for all parts
+         local player = game.Players.LocalPlayer
+         if player and player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+               if part:IsA("BasePart") then
+                  part.Transparency = 0
+                  for _, decal in pairs(part:GetChildren()) do
+                     if decal:IsA("Decal") then
+                        decal.Transparency = 0
+                     end
+                  end
+               end
+            end
+         end
+         invisibleRunning = false
+         Rayfield:Notify({
+            Title = "Invisible",
+            Content = "Invisible script disabled (reset transparency).",
+            Duration = 3,
+            Image = 4483362458,
+         })
+      end
    end,
 })
+
+local speedEnabled = false
+local defaultSpeed = 16
+local currentSpeed = defaultSpeed
+
+local function applySpeed()
+   local humanoid = getHumanoid()
+   if humanoid then
+      if speedEnabled then
+         humanoid.WalkSpeed = currentSpeed
+      else
+         humanoid.WalkSpeed = defaultSpeed
+      end
+   end
+end
 
 PlayerTab:CreateSlider({
    Name = "Speed Slider",
    Range = {0, 100},
    Increment = 1,
    Suffix = "Speed",
-   CurrentValue = 16, -- Default Roblox WalkSpeed
-   Flag = "Slider1",
-   Callback = function(Value)
-      local player = game.Players.LocalPlayer
-      if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-         player.Character.Humanoid.WalkSpeed = Value
+   CurrentValue = defaultSpeed,
+   Flag = "SpeedSlider",
+   Callback = function(value)
+      currentSpeed = value
+      if speedEnabled then
+         applySpeed()
       end
    end,
 })
 
--- TSB Tab (different icon)
-local TSBTab = Window:CreateTab("TSB", 6023426965) -- example icon ID
+PlayerTab:CreateToggle({
+   Name = "Enable Speed Slider",
+   CurrentValue = false,
+   Flag = "SpeedToggle",
+   Callback = function(state)
+      speedEnabled = state
+      applySpeed()
+   end,
+})
+
+-- Ensure speed persists on respawn
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+   wait(1)
+   applySpeed()
+end)
+
+-- TSB Tab
+local TSBTab = Window:CreateTab("TSB", 17205450457)
 local TSBSection = TSBTab:CreateSection("TSB Scripts")
 
+local phantasmRunning = false
+
 TSBTab:CreateButton({
-   Name = "Phantasm Hub",
+   Name = "Phantasm Hub (Toggle)",
    Callback = function()
-      loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
+      if not phantasmRunning then
+         loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
+         phantasmRunning = true
+         Rayfield:Notify({
+            Title = "Phantasm Hub",
+            Content = "Phantasm Hub loaded!",
+            Duration = 3,
+            Image = 4483362458,
+         })
+      else
+         Rayfield:Notify({
+            Title = "Toggle Off Not Supported",
+            Content = "Reload the game to disable Phantasm Hub.",
+            Duration = 4,
+            Image = 4483362458,
+         })
+      end
    end,
 })
 
 TSBTab:CreateButton({
-   Name = "Another TSB Script",
+   Name = "Another TSB Script (Toggle)",
    Callback = function()
-      loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
+      if not phantasmRunning then
+         loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
+         phantasmRunning = true
+         Rayfield:Notify({
+            Title = "TSB Script",
+            Content = "Script loaded!",
+            Duration = 3,
+            Image = 4483362458,
+         })
+      else
+         Rayfield:Notify({
+            Title = "Toggle Off Not Supported",
+            Content = "Reload the game to disable this script.",
+            Duration = 4,
+            Image = 4483362458,
+         })
+      end
    end,
 })
 
--- Grow a Garden Tab (different icon)
-local GardenTab = Window:CreateTab("Grow a Garden", 6023426989) -- example icon ID
+-- Grow a Garden Tab
+local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
 local GardenSection = GardenTab:CreateSection("Garden Scripts")
 
+local gardenRunning = false
+
 GardenTab:CreateButton({
-   Name = "Grow a Garden Script",
+   Name = "Grow a Garden Script (Toggle)",
    Callback = function()
-      loadstring(game:HttpGet("https://raw.githubusercontent.com/tesghg/Grow-a-Garden/main/ameicaa_Grow_A_Garden.lua"))()
+      if not gardenRunning then
+         loadstring(game:HttpGet("https://raw.githubusercontent.com/tesghg/Grow-a-Garden/main/ameicaa_Grow_A_Garden.lua"))()
+         gardenRunning = true
+         Rayfield:Notify({
+            Title = "Grow a Garden",
+            Content = "Garden script loaded!",
+            Duration = 3,
+            Image = 4483362458,
+         })
+      else
+         Rayfield:Notify({
+            Title = "Toggle Off Not Supported",
+            Content = "Reload the game to disable Grow a Garden script.",
+            Duration = 4,
+            Image = 4483362458,
+         })
+      end
    end,
 })
