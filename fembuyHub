@@ -46,22 +46,6 @@ local toggles = {
    ESPEnabled = false
 }
 
--- Cache original sizes for scaling
-local originalSizes = {}
-local function storeOriginalSizes()
-    if localPlayer.Character then
-        for _, part in pairs(localPlayer.Character:GetChildren()) do
-            if part:IsA("BasePart") then
-                if not originalSizes[part.Name] then
-                    originalSizes[part.Name] = part.Size
-                end
-            end
-        end
-    end
-end
-
-storeOriginalSizes()
-
 -- Function: Highlight (ESP) all players
 local function highlightPlayers()
    for _, player in pairs(Players:GetPlayers()) do
@@ -117,38 +101,31 @@ local function teleportAllToMe()
    })
 end
 
--- Player size scaling function
+-- Better player size scaling using Humanoid.Scale values (to avoid collapse)
 local function setPlayerSize(scale)
    if not localPlayer.Character then return end
-   for _, part in pairs(localPlayer.Character:GetChildren()) do
-      if part:IsA("BasePart") and originalSizes[part.Name] then
-         part.Size = originalSizes[part.Name] * scale
+   local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+   if humanoid then
+      -- Use Humanoid properties to scale the character safely
+      -- These work on R15 rigs
+      humanoid.BodyHeightScale.Value = scale
+      humanoid.BodyWidthScale.Value = scale
+      humanoid.BodyDepthScale.Value = scale
+      humanoid.HeadScale.Value = scale
+   else
+      -- Fallback: if no Humanoid or no scale properties, try scaling parts cautiously (not recommended)
+      Rayfield:Notify({
+         Title = "Warning",
+         Content = "Humanoid scales not found; size change may cause glitches.",
+         Duration = 5
+      })
+      for _, part in pairs(localPlayer.Character:GetChildren()) do
+         if part:IsA("BasePart") then
+            part.Size = part.Size * scale
+         end
       end
    end
 end
-
--- WalkSpeed update function
-local currentSpeed = 16
-local function updateWalkSpeed(speed)
-   if type(speed) ~= "number" then return end
-   currentSpeed = speed
-
-   local function applySpeed(character)
-      local humanoid = character:FindFirstChildOfClass("Humanoid")
-      if humanoid then
-         humanoid.WalkSpeed = speed
-      end
-   end
-
-   if localPlayer.Character then
-      applySpeed(localPlayer.Character)
-   end
-
-   localPlayer.CharacterAdded:Connect(function(character)
-      character:WaitForChild("Humanoid").WalkSpeed = speed
-   end)
-end
-updateWalkSpeed(currentSpeed)
 
 -- HOME TAB
 local HomeTab = Window:CreateTab("Home", 17205450457)
@@ -172,6 +149,18 @@ HomeTab:CreateButton({
 -- PLAYER TAB
 local PlayerTab = Window:CreateTab("Player", 17205450457)
 
+local Slider = MainTab:CreateSlider({
+   Name = "WalkSpeed",
+   Range = {0, 300},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Value)
+        Game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = (value)
+   end,
+})
+
 PlayerTab:CreateButton({
    Name = "Invisible Script",
    Callback = function()
@@ -182,38 +171,14 @@ PlayerTab:CreateButton({
    end,
 })
 
--- Speed input box (fix speed not updating properly)
-PlayerTab:CreateInput({
-   Name = "Set Walk Speed",
-   PlaceholderText = "Type speed here (e.g. 50)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(text)
-       local speedNum = tonumber(text)
-       if speedNum and speedNum > 0 then
-          updateWalkSpeed(speedNum)
-          Rayfield:Notify({
-              Title = "Speed Updated",
-              Content = "Walk speed set to "..speedNum,
-              Duration = 4
-          })
-       else
-          Rayfield:Notify({
-              Title = "Invalid Input",
-              Content = "Enter a positive number!",
-              Duration = 4
-          })
-       end
-   end
-})
-
--- Player size input box
+-- Player size input box (no limit, safer scaling)
 PlayerTab:CreateInput({
    Name = "Player Size Multiplier",
-   PlaceholderText = "0.5 to 5 (default 1)",
+   PlaceholderText = "Type any positive number (e.g. 1.5)",
    RemoveTextAfterFocusLost = false,
    Callback = function(text)
        local sizeNum = tonumber(text)
-       if sizeNum and sizeNum >= 0.5 and sizeNum <= 5 then
+       if sizeNum and sizeNum > 0 then
            setPlayerSize(sizeNum)
            Rayfield:Notify({
                Title = "Size Updated",
@@ -223,7 +188,7 @@ PlayerTab:CreateInput({
        else
            Rayfield:Notify({
                Title = "Invalid Input",
-               Content = "Enter a number between 0.5 and 5!",
+               Content = "Enter a positive number!",
                Duration = 4
            })
        end
