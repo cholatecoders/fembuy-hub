@@ -34,45 +34,61 @@ Rayfield:Notify({
    Image = 4483362458,
 })
 
--- Script Toggles
+-- Toggles
 local toggles = {
    InfYield = false,
    Invis = false,
    Phantasm = false,
    TSBExtra = false,
    Garden = false,
-   LockPlayers = false
+   ESPEnabled = false
 }
 
-local offsetDistance = 10 -- Default distance in studs in front of the player
-
--- Function: Teleport all players in front of local player and lock
-local function teleportAndLockPlayers()
-    local localPlayer = game.Players.LocalPlayer
-    local character = localPlayer.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-
-    local root = character.HumanoidRootPart
-    local targetPos = root.Position + (root.CFrame.LookVector * offsetDistance)
-
-    for _, player in pairs(game.Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local part = player.Character.HumanoidRootPart
-            part.CFrame = CFrame.new(targetPos)
-            part.Position = targetPos
-        end
-    end
+-- Function: Highlight (ESP) all players
+local function highlightPlayers()
+   for _, player in pairs(game.Players:GetPlayers()) do
+      if player ~= game.Players.LocalPlayer and player.Character then
+         if not player.Character:FindFirstChild("ESPBox") then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "ESPBox"
+            highlight.FillColor = Color3.fromRGB(255, 0, 255)
+            highlight.FillTransparency = 0.6
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            highlight.OutlineTransparency = 0
+            highlight.Adornee = player.Character
+            highlight.Parent = player.Character
+         end
+      end
+   end
 end
 
--- Run teleport lock loop
-task.spawn(function()
-    while true do
-        if toggles.LockPlayers then
-            teleportAndLockPlayers()
-        end
-        task.wait(0.1)
-    end
-end)
+-- Function: Kill all players
+local function killAllPlayers()
+   for _, player in pairs(game.Players:GetPlayers()) do
+      if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+         player.Character.Humanoid:TakeDamage(9999)
+      end
+   end
+end
+
+-- Function: Teleport all players to you (once)
+local function teleportAllToMe()
+   local localPlayer = game.Players.LocalPlayer
+   local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+   if not root then return end
+
+   for _, player in pairs(game.Players:GetPlayers()) do
+      if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+         player.Character.HumanoidRootPart.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+      end
+   end
+
+   Rayfield:Notify({
+      Title = "Teleport Complete",
+      Content = "All players have been teleported to you.",
+      Duration = 5
+   })
+end
 
 -- Home Tab
 local HomeTab = Window:CreateTab("Home", 17205450457)
@@ -93,19 +109,6 @@ HomeTab:CreateButton({
    end,
 })
 
-HomeTab:CreateButton({
-   Name = "Lock All Players In Front of You",
-   Callback = function()
-      toggles.LockPlayers = not toggles.LockPlayers
-
-      Rayfield:Notify({
-         Title = toggles.LockPlayers and "Lock Enabled" or "Lock Disabled",
-         Content = toggles.LockPlayers and "All players are now stuck in front of you." or "They can now move freely.",
-         Duration = 5
-      })
-   end,
-})
-
 -- Player Tab
 local PlayerTab = Window:CreateTab("Player", 17205450457)
 
@@ -119,6 +122,7 @@ PlayerTab:CreateButton({
    end,
 })
 
+-- Speed control
 local currentSpeed = 16
 PlayerTab:CreateSlider({
    Name = "Walk Speed",
@@ -128,18 +132,16 @@ PlayerTab:CreateSlider({
    CurrentValue = currentSpeed,
    Callback = function(Value)
       currentSpeed = Value
+      local player = game.Players.LocalPlayer
+      if player.Character and player.Character:FindFirstChild("Humanoid") then
+         player.Character.Humanoid.WalkSpeed = currentSpeed
+      end
    end,
 })
 
--- Maintain walk speed
-task.spawn(function()
-   while true do
-      local plr = game.Players.LocalPlayer
-      if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
-         plr.Character.Humanoid.WalkSpeed = currentSpeed
-      end
-      task.wait(0.2)
-   end
+-- Reapply speed on respawn
+game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
+   char:WaitForChild("Humanoid").WalkSpeed = currentSpeed
 end)
 
 -- TSB Tab
@@ -165,6 +167,18 @@ TSBTab:CreateButton({
    end,
 })
 
+TSBTab:CreateButton({
+   Name = "Highlight All Players",
+   Callback = function()
+      highlightPlayers()
+      Rayfield:Notify({
+         Title = "ESP Enabled",
+         Content = "All players now highlighted.",
+         Duration = 4
+      })
+   end,
+})
+
 -- Garden Tab
 local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
 
@@ -177,3 +191,26 @@ GardenTab:CreateButton({
       end
    end,
 })
+
+-- Troll Tab
+local TrollTab = Window:CreateTab("Troll", 17205450457)
+
+TrollTab:CreateButton({
+   Name = "Teleport Everyone To Me",
+   Callback = function()
+      teleportAllToMe()
+   end,
+})
+
+TrollTab:CreateButton({
+   Name = "Kill All Players",
+   Callback = function()
+      killAllPlayers()
+      Rayfield:Notify({
+         Title = "Attack Complete",
+         Content = "Tried to kill all players!",
+         Duration = 5
+      })
+   end,
+})
+
