@@ -37,117 +37,120 @@ Rayfield:Notify({
 local Players = game:GetService("Players")
 local localPlayer = Players.LocalPlayer
 
--- Toggles state
 local toggles = {
    InfYield = false,
    Invis = false,
    Phantasm = false,
    TSBExtra = false,
    Garden = false,
-   HighlightToggle = false,
+   ESPEnabled = false
 }
 
--- ======= Highlight Function =======
-local function toggleHighlight(enable)
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character then
-            local highlight = player.Character:FindFirstChild("ESPBox")
-            if enable then
-                if not highlight then
-                    highlight = Instance.new("Highlight")
-                    highlight.Name = "ESPBox"
-                    highlight.FillColor = Color3.fromRGB(255, 0, 255)
-                    highlight.FillTransparency = 0.6
-                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    highlight.OutlineTransparency = 0
-                    highlight.Adornee = player.Character
-                    highlight.Parent = player.Character
-                end
-            else
-                if highlight then
-                    highlight:Destroy()
-                end
-            end
-        end
-    end
-end
-
--- ======= Kill All Players =======
-local function killAllPlayers()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
-            player.Character.Humanoid:TakeDamage(9999)
-        end
-    end
-end
-
--- ======= Teleport All to You (instantly change everyone’s position) =======
-local function teleportAllToMe()
-    local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not root then
-        Rayfield:Notify({
-            Title = "Error",
-            Content = "Your character or HumanoidRootPart not found!",
-            Duration = 5
-        })
-        return
-    end
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local humRoot = player.Character.HumanoidRootPart
-            humRoot.CFrame = root.CFrame + Vector3.new(0, 5, 0) -- teleport 5 studs above local player
-        end
-    end
-
-    Rayfield:Notify({
-        Title = "Teleport Complete",
-        Content = "All players teleported to you!",
-        Duration = 5
-    })
-end
-
--- ======= Speed Input (textbox) =======
-local currentSpeed = 16
-
-local function updateWalkSpeed(speed)
-    if typeof(speed) ~= "number" then return end
-    currentSpeed = speed
-
-    local function applySpeed(character)
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.WalkSpeed = speed
-        end
-    end
-
-    if localPlayer.Character then
-        applySpeed(localPlayer.Character)
-    end
-
-    -- Apply on respawn
-    localPlayer.CharacterAdded:Connect(function(character)
-        character:WaitForChild("Humanoid").WalkSpeed = speed
-    end)
-end
-
-updateWalkSpeed(currentSpeed)
-
--- ======= Player Size Slider =======
-local function setPlayerSize(size)
+-- Cache original sizes for scaling
+local originalSizes = {}
+local function storeOriginalSizes()
     if localPlayer.Character then
         for _, part in pairs(localPlayer.Character:GetChildren()) do
             if part:IsA("BasePart") then
-                -- Store original size if needed or just scale relative to original size
-                part.Size = part.Size.Unit * size
+                if not originalSizes[part.Name] then
+                    originalSizes[part.Name] = part.Size
+                end
             end
         end
     end
 end
 
--- ===== Tabs =====
+storeOriginalSizes()
 
--- Home Tab
+-- Function: Highlight (ESP) all players
+local function highlightPlayers()
+   for _, player in pairs(Players:GetPlayers()) do
+      if player ~= localPlayer and player.Character then
+         if not player.Character:FindFirstChild("ESPBox") then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "ESPBox"
+            highlight.FillColor = Color3.fromRGB(255, 0, 255)
+            highlight.FillTransparency = 0.6
+            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+            highlight.OutlineTransparency = 0
+            highlight.Adornee = player.Character
+            highlight.Parent = player.Character
+         end
+      end
+   end
+end
+
+-- Function: Kill all players (local damage, serverside better)
+local function killAllPlayers()
+   for _, player in pairs(Players:GetPlayers()) do
+      if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+         player.Character.Humanoid:TakeDamage(9999)
+      end
+   end
+end
+
+-- Function: Teleport all players to you (once)
+local function teleportAllToMe()
+   local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+   if not root then
+      Rayfield:Notify({
+         Title = "Error",
+         Content = "Your character or HumanoidRootPart not found!",
+         Duration = 5
+      })
+      return
+   end
+
+   for _, player in pairs(Players:GetPlayers()) do
+      if player ~= localPlayer and player.Character then
+         local humRoot = player.Character:FindFirstChild("HumanoidRootPart")
+         if humRoot then
+            humRoot.CFrame = root.CFrame + Vector3.new(0, 5, 0) -- teleport slightly above to avoid clipping
+         end
+      end
+   end
+
+   Rayfield:Notify({
+      Title = "Teleport Complete",
+      Content = "All players have been teleported to you.",
+      Duration = 5
+   })
+end
+
+-- Player size scaling function
+local function setPlayerSize(scale)
+   if not localPlayer.Character then return end
+   for _, part in pairs(localPlayer.Character:GetChildren()) do
+      if part:IsA("BasePart") and originalSizes[part.Name] then
+         part.Size = originalSizes[part.Name] * scale
+      end
+   end
+end
+
+-- WalkSpeed update function
+local currentSpeed = 16
+local function updateWalkSpeed(speed)
+   if type(speed) ~= "number" then return end
+   currentSpeed = speed
+
+   local function applySpeed(character)
+      local humanoid = character:FindFirstChildOfClass("Humanoid")
+      if humanoid then
+         humanoid.WalkSpeed = speed
+      end
+   end
+
+   if localPlayer.Character then
+      applySpeed(localPlayer.Character)
+   end
+
+   localPlayer.CharacterAdded:Connect(function(character)
+      character:WaitForChild("Humanoid").WalkSpeed = speed
+   end)
+end
+updateWalkSpeed(currentSpeed)
+
+-- HOME TAB
 local HomeTab = Window:CreateTab("Home", 17205450457)
 
 HomeTab:CreateButton({
@@ -166,7 +169,7 @@ HomeTab:CreateButton({
    end,
 })
 
--- Player Tab
+-- PLAYER TAB
 local PlayerTab = Window:CreateTab("Player", 17205450457)
 
 PlayerTab:CreateButton({
@@ -179,48 +182,55 @@ PlayerTab:CreateButton({
    end,
 })
 
+-- Speed input box (fix speed not updating properly)
 PlayerTab:CreateInput({
    Name = "Set Walk Speed",
    PlaceholderText = "Type speed here (e.g. 50)",
    RemoveTextAfterFocusLost = false,
    Callback = function(text)
        local speedNum = tonumber(text)
-       if speedNum then
+       if speedNum and speedNum > 0 then
           updateWalkSpeed(speedNum)
           Rayfield:Notify({
               Title = "Speed Updated",
-              Content = "Your walk speed is now "..speedNum,
+              Content = "Walk speed set to "..speedNum,
               Duration = 4
           })
        else
           Rayfield:Notify({
               Title = "Invalid Input",
-              Content = "Please enter a valid number for speed!",
+              Content = "Enter a positive number!",
               Duration = 4
           })
        end
    end
 })
 
-PlayerTab:CreateSlider({
-   Name = "Player Size",
-   Range = {0.5, 5},
-   Increment = 0.1,
-   Suffix = "x",
-   CurrentValue = 1,
-   Callback = function(value)
-       if localPlayer.Character then
-           for _, part in pairs(localPlayer.Character:GetChildren()) do
-               if part:IsA("BasePart") then
-                   -- Scale relative to original size is more complex,
-                   -- here just scales current size (may cause odd results if used repeatedly)
-                   part.Size = part.Size.Unit * value
-               end
-           end
+-- Player size input box
+PlayerTab:CreateInput({
+   Name = "Player Size Multiplier",
+   PlaceholderText = "0.5 to 5 (default 1)",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(text)
+       local sizeNum = tonumber(text)
+       if sizeNum and sizeNum >= 0.5 and sizeNum <= 5 then
+           setPlayerSize(sizeNum)
+           Rayfield:Notify({
+               Title = "Size Updated",
+               Content = "Player size set to "..sizeNum.."x",
+               Duration = 4
+           })
+       else
+           Rayfield:Notify({
+               Title = "Invalid Input",
+               Content = "Enter a number between 0.5 and 5!",
+               Duration = 4
+           })
        end
-   end,
+   end
 })
 
+-- Teleport everyone button
 PlayerTab:CreateButton({
    Name = "Teleport Everyone To Me",
    Callback = function()
@@ -228,7 +238,7 @@ PlayerTab:CreateButton({
    end,
 })
 
--- TSB Tab
+-- TSB TAB
 local TSBTab = Window:CreateTab("TSB", 17205450457)
 
 TSBTab:CreateButton({
@@ -251,22 +261,19 @@ TSBTab:CreateButton({
    end,
 })
 
-TSBTab:CreateToggle({
+TSBTab:CreateButton({
    Name = "Highlight All Players",
-   CurrentValue = false,
-   Flag = "HighlightToggle",
-   Callback = function(value)
-      toggles.HighlightToggle = value
-      toggleHighlight(value)
+   Callback = function()
+      highlightPlayers()
       Rayfield:Notify({
-         Title = value and "ESP Enabled" or "ESP Disabled",
-         Content = value and "All players now highlighted." or "Highlight removed.",
+         Title = "ESP Enabled",
+         Content = "All players now highlighted.",
          Duration = 4
       })
    end,
 })
 
--- Garden Tab
+-- GARDEN TAB
 local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
 
 GardenTab:CreateButton({
@@ -279,8 +286,15 @@ GardenTab:CreateButton({
    end,
 })
 
--- Troll Tab
+-- TROLL TAB
 local TrollTab = Window:CreateTab("Troll", 17205450457)
+
+TrollTab:CreateButton({
+   Name = "Teleport Everyone To Me",
+   Callback = function()
+      teleportAllToMe()
+   end,
+})
 
 TrollTab:CreateButton({
    Name = "Kill All Players",
@@ -293,3 +307,4 @@ TrollTab:CreateButton({
       })
    end,
 })
+
