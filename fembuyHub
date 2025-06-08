@@ -1,112 +1,108 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Fembuy Hub",
-   Icon = 93059603763570,
-   LoadingTitle = "Loading Hub",
-   LoadingSubtitle = "by Manuel",
-   Theme = "Default",
-   ToggleUIKeybind = "K",
-   DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false,
+    Name = "Fembuy Hub",
+    Icon = 93059603763570,
+    LoadingTitle = "Loading Hub",
+    LoadingSubtitle = "by Manuel",
+    Theme = "Default",
+    ToggleUIKeybind = "K",
+    DisableRayfieldPrompts = false,
+    DisableBuildWarnings = false,
 
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = nil,
-      FileName = "Fembuy Hub"
-   },
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "Fembuy Hub"
+    },
 
-   Discord = {
-      Enabled = false,
-      Invite = "noinvitelink",
-      RememberJoins = true
-   },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvitelink",
+        RememberJoins = true
+    },
 
-   KeySystem = true,
-   KeySettings = {
-      Title = "Fembuy Hub",
-      Subtitle = "Enter the key to proceed",
-      Note = "Ask Manuel",
-      FileName = "Key",
-      SaveKey = true,
-      GrabKeyFromSite = false,
-      Key = {"ilovefemboys"}
-   }
+    KeySystem = true,
+    KeySettings = {
+        Title = "Fembuy Hub",
+        Subtitle = "Enter the key to proceed",
+        Note = "Ask Manuel",
+        FileName = "Key",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"ilovefemboys"}
+    }
 })
 
 Rayfield:Notify({
-   Title = "Successful Execution",
-   Content = "Fembuy Hub has loaded correctly.",
-   Duration = 6.5,
-   Image = 4483362458,
+    Title = "Successful Execution",
+    Content = "Fembuy Hub has loaded correctly.",
+    Duration = 6.5,
+    Image = 4483362458,
 })
 
 -- Home Tab
 local HomeTab = Window:CreateTab("Home", 17205450457)
-local HomeSection = HomeTab:CreateSection("Main")
+HomeTab:CreateSection("Main")
 
 HomeTab:CreateButton({
-   Name = "Infinite Yield",
-   Callback = function()
-      loadstring(game:HttpGet("https://cdn.wearedevs.net/scripts/Infinite%20Yield.txt"))()
-   end,
+    Name = "Infinite Yield",
+    Callback = function()
+        loadstring(game:HttpGet("https://cdn.wearedevs.net/scripts/Infinite%20Yield.txt"))()
+    end,
 })
 
 -- Player Tab
 local PlayerTab = Window:CreateTab("Player", 17205450457)
+PlayerTab:CreateSection("Player Tools")
 
 PlayerTab:CreateButton({
-   Name = "Invisible Script",
-   Callback = function()
-      loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
-   end,
+    Name = "Invisible Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/3Rnd9rHf"))()
+    end,
 })
 
-local Slider = Tab:CreateSlider({
-   Name = "Speed Slider",
-   Range = {0, 100},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = 16, -- Default Roblox WalkSpeed
-   Flag = "Slider1",
-   Callback = function(Value)
-      local player = game.Players.LocalPlayer
-      if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-         player.Character.Humanoid.WalkSpeed = Value
-      end
-   end,
+PlayerTab:CreateSlider({
+    Name = "Speed Slider",
+    Range = {0, 100},
+    Increment = 1,
+    Suffix = "Speed",
+    CurrentValue = 16,
+    Flag = "Slider1",
+    Callback = function(Value)
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = Value
+        end
+    end,
 })
 
+-- TSB Tab
+local TSBTab = Window:CreateTab("TSB", 17205450457)
+TSBTab:CreateSection("TSB Scripts")
 
-local PlayerTab = Window:CreateTab("tsb", 17205450457)
-local Button = Tab:Createbutton({
-  Name = "phantsm hub",
-   Callback = function()
-      loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/refs/heads/main/Games/TSB.lua"))()
-   end,
+TSBTab:CreateButton({
+    Name = "Phantasm Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/refs/heads/main/Games/TSB.lua"))()
+    end,
 })
 
-local Button = Tab;CreateButton({
-        Name = "another tsb scipt"
-        Callback = function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/refs/heads/main/Games/TSB.lua"))()
-        end,
+TSBTab:CreateButton({
+    Name = "Another TSB Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/refs/heads/main/Games/TSB.lua"))()
+    end,
 })
 
+-- Grow a Garden Tab
+local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
+GardenTab:CreateSection("Farming")
 
-local Button = Tab;CreateButton({
-        Name = "another tsb scipt"
-        Callback = function()
-            
-           end,
-})
-
-
-local Button = Tab:createButton({
-local PlayerTab = Window:Createtab("Groww a garden")
-
-  Name = "idk just grow a gag script"
-   callback = funtion()
-       loadstring(game:HttpGet("https://raw.githubusercontent.com/tesghg/Grow-a-Garden/main/ameicaa_Grow_A_Garden.lua"))()
+GardenTab:CreateButton({
+    Name = "Grow a Garden Script",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/tesghg/Grow-a-Garden/main/ameicaa_Grow_A_Garden.lua"))()
     end,
 })
