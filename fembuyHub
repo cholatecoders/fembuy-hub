@@ -43,7 +43,8 @@ local toggles = {
    Phantasm = false,
    TSBExtra = false,
    Garden = false,
-   ESPEnabled = false
+   ESPEnabled = false,
+   TeleportLock = false
 }
 
 -- Function: Highlight (ESP) all players
@@ -73,57 +74,39 @@ local function killAllPlayers()
    end
 end
 
--- Function: Teleport all players to you (once)
-local function teleportAllToMe()
-   local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-   if not root then
-      Rayfield:Notify({
-         Title = "Error",
-         Content = "Your character or HumanoidRootPart not found!",
-         Duration = 5
-      })
+-- Variables for teleport lock
+local teleportEnabled = false
+local offsetDistance = 10 -- studs in front of local player
+
+-- Function to teleport and lock all players to a position in front of the local player
+local function teleportAndLockPlayers()
+   local localCharacter = localPlayer.Character
+   if not localCharacter or not localCharacter:FindFirstChild("HumanoidRootPart") then
       return
    end
 
+   local humanoidRootPart = localCharacter.HumanoidRootPart
+   local localCFrame = humanoidRootPart.CFrame
+   local offsetPosition = localCFrame.Position + (localCFrame.LookVector * offsetDistance)
+
    for _, player in pairs(Players:GetPlayers()) do
-      if player ~= localPlayer and player.Character then
-         local humRoot = player.Character:FindFirstChild("HumanoidRootPart")
-         if humRoot then
-            humRoot.CFrame = root.CFrame + Vector3.new(0, 5, 0) -- teleport slightly above to avoid clipping
-         end
-      end
-   end
-
-   Rayfield:Notify({
-      Title = "Teleport Complete",
-      Content = "All players have been teleported to you.",
-      Duration = 5
-   })
-end
-
--- Better player size scaling using Humanoid.Scale values (to avoid collapse)
-local function setPlayerSize(scale)
-   if not localPlayer.Character then return end
-   local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
-   if humanoid and humanoid:FindFirstChild("BodyHeightScale") and humanoid:FindFirstChild("BodyWidthScale") and humanoid:FindFirstChild("BodyDepthScale") and humanoid:FindFirstChild("HeadScale") then
-      humanoid.BodyHeightScale.Value = scale
-      humanoid.BodyWidthScale.Value = scale
-      humanoid.BodyDepthScale.Value = scale
-      humanoid.HeadScale.Value = scale
-   else
-      Rayfield:Notify({
-         Title = "Warning",
-         Content = "Humanoid scale values not found; size change may cause glitches.",
-         Duration = 5
-      })
-      -- fallback: scaling parts, but can cause issues
-      for _, part in pairs(localPlayer.Character:GetChildren()) do
-         if part:IsA("BasePart") then
-            part.Size = part.Size * scale
-         end
+      if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+         local targetHumanoidRootPart = player.Character.HumanoidRootPart
+         targetHumanoidRootPart.CFrame = CFrame.new(offsetPosition)
+         targetHumanoidRootPart.Position = offsetPosition
       end
    end
 end
+
+-- Continuous teleport lock loop
+spawn(function()
+   while true do
+      if teleportEnabled then
+         teleportAndLockPlayers()
+      end
+      wait(0.1)
+   end
+end)
 
 -- HOME TAB
 local HomeTab = Window:CreateTab("Home", 17205450457)
@@ -157,35 +140,21 @@ PlayerTab:CreateButton({
    end,
 })
 
--- Player size input box (no limit, safer scaling)
-PlayerTab:CreateInput({
-   Name = "Player Size Multiplier",
-   PlaceholderText = "Type any positive number (e.g. 1.5)",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(text)
-       local sizeNum = tonumber(text)
-       if sizeNum and sizeNum > 0 then
-           setPlayerSize(sizeNum)
-           Rayfield:Notify({
-               Title = "Size Updated",
-               Content = "Player size set to "..sizeNum.."x",
-               Duration = 4
-           })
-       else
-           Rayfield:Notify({
-               Title = "Invalid Input",
-               Content = "Enter a positive number!",
-               Duration = 4
-           })
+PlayerTab:CreateSlider({
+   Name = "WalkSpeed",
+   Range = {0, 300},
+   Increment = 1,
+   Suffix = "Speed",
+   CurrentValue = 16,
+   Flag = "WalkSpeedSlider",
+   Callback = function(value)
+       local character = localPlayer.Character
+       if character then
+           local humanoid = character:FindFirstChildOfClass("Humanoid")
+           if humanoid then
+               humanoid.WalkSpeed = value
+           end
        end
-   end
-})
-
--- Teleport everyone button
-PlayerTab:CreateButton({
-   Name = "Teleport Everyone To Me",
-   Callback = function()
-       teleportAllToMe()
    end,
 })
 
@@ -224,6 +193,141 @@ TSBTab:CreateButton({
    end,
 })
 
+-- This is your requested TP button creating the teleport GUI inside TSB tab
+TSBTab:CreateButton({
+    Name = "TP",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local playerGui = player:WaitForChild("PlayerGui")
+        
+        -- Avoid creating GUI twice
+        if playerGui:FindFirstChild("TSBTeleportGui") then
+            Rayfield:Notify({
+                Title = "TP",
+                Content = "Teleport GUI is already open.",
+                Duration = 4
+            })
+            return
+        end
+        
+        -- Create ScreenGui
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "TSBTeleportGui"
+        screenGui.Parent = playerGui
+
+        -- Create the toggle button (25x25)
+        local toggleButton = Instance.new("TextButton")
+        toggleButton.Size = UDim2.new(0, 25, 0, 25)
+        toggleButton.Position = UDim2.new(0, 10, 0, 10)
+        toggleButton.Text = "+"
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        toggleButton.Parent = screenGui
+
+        -- Create the main menu (hidden by default)
+        local mainMenu = Instance.new("Frame")
+        mainMenu.Size = UDim2.new(0, 400, 0, 400)
+        mainMenu.Position = UDim2.new(0.5, -200, 0.5, -200)
+        mainMenu.BackgroundTransparency = 0.5
+        mainMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        mainMenu.Visible = false
+        mainMenu.Parent = screenGui
+
+        -- Create 8 buttons and labels in the main menu
+        local labels = {
+            "Main Map", "Mountain 1", "Mountain 2", "Death counter room",
+            "Atomic slash room", "Upper baseplate", "Lower baseplate", "Void"
+        }
+
+        local buttons = {}
+        for i = 1, 8 do
+            -- Create button
+            local button = Instance.new("TextButton")
+            button.Size = UDim2.new(0, 100, 0, 50)
+            button.Position = UDim2.new(0, (i-1)%4 * 105, 0, math.floor((i-1)/4) * 55 + 75)
+            button.Text = ""
+            button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            button.Parent = mainMenu
+
+            -- Create label for button
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.Text = labels[i]
+            label.TextColor3 = Color3.fromRGB(0, 0, 0)
+            label.BackgroundTransparency = 1
+            label.TextSize = 10
+            label.Parent = button
+
+            table.insert(buttons, button)
+        end
+
+        -- Function to toggle the visibility of the main menu
+        local function toggleMenu()
+            mainMenu.Visible = not mainMenu.Visible
+        end
+
+        -- Connect the toggle button to the toggleMenu function
+        toggleButton.MouseButton1Click:Connect(toggleMenu)
+
+        -- Function to teleport the player
+        local function teleportToPosition(position)
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(position)
+            end
+        end
+
+        -- Teleportation for the 8 buttons
+        local originalPosition = nil
+        local baseplateCreated = false
+
+        buttons[1].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(219.81, 437.76, -62.96)) -- Main Map coordinates
+        end)
+
+        buttons[2].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(-100.45, 649.84, -381.81)) -- Mountain 1 coordinates
+        end)
+
+        buttons[3].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(343.55, 696.10, 370.36)) -- Mountain 2 coordinates
+        end)
+
+        buttons[4].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(-35.38, 34.95, 20348.53)) -- Death counter room coordinates
+        end)
+
+        buttons[5].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(1086.53, 142.31, 23007.97)) -- Atomic slash room coordinates
+        end)
+
+        buttons[6].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(1163.84, 402.99, 22901.67)) -- Upper baseplate coordinates
+        end)
+
+        buttons[7].MouseButton1Click:Connect(function()
+            teleportToPosition(Vector3.new(1144.79, 16.93, 22928.82)) -- Lower baseplate coordinates
+        end)
+
+        buttons[8].MouseButton1Click:Connect(function()
+            if originalPosition == nil then
+                originalPosition = player.Character.HumanoidRootPart.Position
+                teleportToPosition(Vector3.new(-6896.53, 873.40, -6729.34)) -- Void coordinates
+                
+                if not baseplateCreated then
+                    local baseplate = Instance.new("Part")
+                    baseplate.Size = Vector3.new(100, 1, 100)  -- 100x100 baseplate
+                    baseplate.Position = Vector3.new(-6896.53, 871.40, -6729.34)  -- 2 studs below the Void position
+                    baseplate.Anchored = true
+                    baseplate.Parent = workspace
+                    baseplateCreated = true
+                end
+            else
+                teleportToPosition(originalPosition)
+                originalPosition = nil
+            end
+        end)
+    end,
+})
+
 -- GARDEN TAB
 local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
 
@@ -232,29 +336,41 @@ GardenTab:CreateButton({
    Callback = function()
       if not toggles.Garden then
          toggles.Garden = true
-         loadstring(game:HttpGet("https://raw.githubusercontent.com/tesghg/Grow-a-Garden/main/ameicaa_Grow_A_Garden.lua"))()
+         loadstring(game:HttpGet("https://pastebin.com/raw/Wx1jLMxt"))()
       end
    end,
 })
 
--- TROLL TAB
-local TrollTab = Window:CreateTab("Troll", 17205450457)
+-- ESP TAB
+local ESPTab = Window:CreateTab("ESP", 17205450457)
 
-TrollTab:CreateButton({
-   Name = "Teleport Everyone To Me",
-   Callback = function()
-      teleportAllToMe()
+ESPTab:CreateToggle({
+   Name = "Enable ESP",
+   CurrentValue = false,
+   Flag = "EnableESP",
+   Callback = function(value)
+      toggles.ESPEnabled = value
+      if value then
+         highlightPlayers()
+      else
+         -- Remove ESP highlights
+         for _, player in pairs(Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("ESPBox") then
+               player.Character.ESPBox:Destroy()
+            end
+         end
+      end
    end,
 })
 
-TrollTab:CreateButton({
+-- MISC TAB
+local MiscTab = Window:CreateTab("Misc", 17205450457)
+
+MiscTab:CreateButton({
    Name = "Kill All Players",
    Callback = function()
       killAllPlayers()
-      Rayfield:Notify({
-         Title = "Attack Complete",
-         Content = "Tried to kill all players!",
-         Duration = 5
-      })
    end,
 })
+
+return Rayfield
