@@ -113,18 +113,6 @@ HomeTab:CreateButton({
    end,
 })
 
-toggles.UniversalHub = false
-
-HomeTab:CreateButton({
-   Name = "UniversalHub",
-   Callback = function()
-      if not toggles.UniversalHub then
-         toggles.UniversalHub = true
-         loadstring(game:HttpGet("https://raw.githubusercontent.com/FOGOTY/super-script-all-games-roblox/main/script"))()
-      end
-   end,
-})
-
 HomeTab:CreateButton({
    Name = "Close All GUIs",
    Callback = function()
