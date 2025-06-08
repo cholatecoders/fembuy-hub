@@ -7,11 +7,8 @@ local Window = Rayfield:CreateWindow({
    LoadingSubtitle = "by Manuel",
    Theme = "Default",
    ToggleUIKeybind = "K",
-   DisableRayfieldPrompts = false,
-   DisableBuildWarnings = false,
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = nil,
       FileName = "Fembuy Hub"
    },
    Discord = {
@@ -26,7 +23,6 @@ local Window = Rayfield:CreateWindow({
       Note = "Ask Manuel",
       FileName = "Key",
       SaveKey = true,
-      GrabKeyFromSite = false,
       Key = {"ilovefemboys"}
    }
 })
@@ -38,15 +34,45 @@ Rayfield:Notify({
    Image = 4483362458,
 })
 
--- Toggle flags
+-- Script Toggles
 local toggles = {
    InfYield = false,
-   LockPlayersToMe = false,
-   InvisScript = false,
+   Invis = false,
    Phantasm = false,
-   TSB2 = false,
-   Garden = false
+   TSBExtra = false,
+   Garden = false,
+   LockPlayers = false
 }
+
+local offsetDistance = 10 -- Default distance in studs in front of the player
+
+-- Function: Teleport all players in front of local player and lock
+local function teleportAndLockPlayers()
+    local localPlayer = game.Players.LocalPlayer
+    local character = localPlayer.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+    local root = character.HumanoidRootPart
+    local targetPos = root.Position + (root.CFrame.LookVector * offsetDistance)
+
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local part = player.Character.HumanoidRootPart
+            part.CFrame = CFrame.new(targetPos)
+            part.Position = targetPos
+        end
+    end
+end
+
+-- Run teleport lock loop
+task.spawn(function()
+    while true do
+        if toggles.LockPlayers then
+            teleportAndLockPlayers()
+        end
+        task.wait(0.1)
+    end
+end)
 
 -- Home Tab
 local HomeTab = Window:CreateTab("Home", 17205450457)
@@ -60,7 +86,7 @@ HomeTab:CreateButton({
       else
          Rayfield:Notify({
             Title = "Already Loaded",
-            Content = "Rejoin to unload Infinite Yield.",
+            Content = "Rejoin to disable Infinite Yield.",
             Duration = 4
          })
       end
@@ -68,31 +94,15 @@ HomeTab:CreateButton({
 })
 
 HomeTab:CreateButton({
-   Name = "Teleport Everyone To Me (Lock)",
+   Name = "Lock All Players In Front of You",
    Callback = function()
-      toggles.LockPlayersToMe = not toggles.LockPlayersToMe
-      Rayfield:Notify({
-         Title = "Player Lock",
-         Content = toggles.LockPlayersToMe and "Players are now locked to your position." or "Lock disabled.",
-         Duration = 4
-      })
+      toggles.LockPlayers = not toggles.LockPlayers
 
-      if toggles.LockPlayersToMe then
-         task.spawn(function()
-            while toggles.LockPlayersToMe do
-               local localPlayer = game.Players.LocalPlayer
-               local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-               if root then
-                  for _, player in ipairs(game.Players:GetPlayers()) do
-                     if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                        player.Character.HumanoidRootPart.CFrame = root.CFrame + Vector3.new(0, 5, 0)
-                     end
-                  end
-               end
-               task.wait(0.5)
-            end
-         end)
-      end
+      Rayfield:Notify({
+         Title = toggles.LockPlayers and "Lock Enabled" or "Lock Disabled",
+         Content = toggles.LockPlayers and "All players are now stuck in front of you." or "They can now move freely.",
+         Duration = 5
+      })
    end,
 })
 
@@ -102,8 +112,8 @@ local PlayerTab = Window:CreateTab("Player", 17205450457)
 PlayerTab:CreateButton({
    Name = "Invisible Script",
    Callback = function()
-      if not toggles.InvisScript then
-         toggles.InvisScript = true
+      if not toggles.Invis then
+         toggles.Invis = true
          loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
       end
    end,
@@ -116,18 +126,17 @@ PlayerTab:CreateSlider({
    Increment = 1,
    Suffix = "Speed",
    CurrentValue = currentSpeed,
-   Flag = "SpeedSlider",
    Callback = function(Value)
       currentSpeed = Value
    end,
 })
 
--- Apply speed persistently
+-- Maintain walk speed
 task.spawn(function()
    while true do
-      local player = game.Players.LocalPlayer
-      if player and player.Character and player.Character:FindFirstChild("Humanoid") then
-         player.Character.Humanoid.WalkSpeed = currentSpeed
+      local plr = game.Players.LocalPlayer
+      if plr and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+         plr.Character.Humanoid.WalkSpeed = currentSpeed
       end
       task.wait(0.2)
    end
@@ -149,8 +158,8 @@ TSBTab:CreateButton({
 TSBTab:CreateButton({
    Name = "Extra TSB Script",
    Callback = function()
-      if not toggles.TSB2 then
-         toggles.TSB2 = true
+      if not toggles.TSBExtra then
+         toggles.TSBExtra = true
          loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
       end
    end,
