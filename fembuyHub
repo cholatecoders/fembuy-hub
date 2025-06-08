@@ -38,57 +38,72 @@ Rayfield:Notify({
    Image = 4483362458,
 })
 
--- Toggle system for button scripts
+-- Toggle flags
 local toggles = {
-   ["Infinite Yield"] = false,
-   ["Invisible Script"] = false,
-   ["Phantasm Hub"] = false,
-   ["Another TSB Script"] = false,
-   ["Garden Script"] = false
+   InfYield = false,
+   LockPlayersToMe = false,
+   InvisScript = false,
+   Phantasm = false,
+   TSB2 = false,
+   Garden = false
 }
 
 -- Home Tab
 local HomeTab = Window:CreateTab("Home", 17205450457)
+
 HomeTab:CreateButton({
-   Name = "Toggle Infinite Yield",
+   Name = "Infinite Yield",
    Callback = function()
-      toggles["Infinite Yield"] = not toggles["Infinite Yield"]
-      if toggles["Infinite Yield"] then
+      if not toggles.InfYield then
+         toggles.InfYield = true
          getgenv().infYield = loadstring(game:HttpGet("https://cdn.wearedevs.net/scripts/Infinite%20Yield.txt"))()
       else
-         -- No official unload function for Infinite Yield
          Rayfield:Notify({
-            Title = "Toggle Off",
-            Content = "Please rejoin to fully disable Infinite Yield.",
-            Duration = 5
+            Title = "Already Loaded",
+            Content = "Rejoin to unload Infinite Yield.",
+            Duration = 4
          })
       end
    end,
 })
 
 HomeTab:CreateButton({
-   Name = "Teleport Everyone To Me",
+   Name = "Teleport Everyone To Me (Lock)",
    Callback = function()
-      local localPlayer = game.Players.LocalPlayer
-      local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-      if root then
-         for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-               player.Character.HumanoidRootPart.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+      toggles.LockPlayersToMe = not toggles.LockPlayersToMe
+      Rayfield:Notify({
+         Title = "Player Lock",
+         Content = toggles.LockPlayersToMe and "Players are now locked to your position." or "Lock disabled.",
+         Duration = 4
+      })
+
+      if toggles.LockPlayersToMe then
+         task.spawn(function()
+            while toggles.LockPlayersToMe do
+               local localPlayer = game.Players.LocalPlayer
+               local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+               if root then
+                  for _, player in ipairs(game.Players:GetPlayers()) do
+                     if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        player.Character.HumanoidRootPart.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+                     end
+                  end
+               end
+               task.wait(0.5)
             end
-         end
+         end)
       end
-   end
+   end,
 })
 
 -- Player Tab
 local PlayerTab = Window:CreateTab("Player", 17205450457)
 
 PlayerTab:CreateButton({
-   Name = "Toggle Invisible Script",
+   Name = "Invisible Script",
    Callback = function()
-      toggles["Invisible Script"] = not toggles["Invisible Script"]
-      if toggles["Invisible Script"] then
+      if not toggles.InvisScript then
+         toggles.InvisScript = true
          loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
       end
    end,
@@ -96,18 +111,18 @@ PlayerTab:CreateButton({
 
 local currentSpeed = 16
 PlayerTab:CreateSlider({
-   Name = "Speed Slider",
+   Name = "Walk Speed",
    Range = {0, 100},
    Increment = 1,
    Suffix = "Speed",
    CurrentValue = currentSpeed,
-   Flag = "Slider1",
+   Flag = "SpeedSlider",
    Callback = function(Value)
       currentSpeed = Value
    end,
 })
 
--- Maintain speed persistently
+-- Apply speed persistently
 task.spawn(function()
    while true do
       local player = game.Players.LocalPlayer
@@ -124,18 +139,18 @@ local TSBTab = Window:CreateTab("TSB", 17205450457)
 TSBTab:CreateButton({
    Name = "Phantasm Hub",
    Callback = function()
-      toggles["Phantasm Hub"] = not toggles["Phantasm Hub"]
-      if toggles["Phantasm Hub"] then
+      if not toggles.Phantasm then
+         toggles.Phantasm = true
          loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
       end
    end,
 })
 
 TSBTab:CreateButton({
-   Name = "Another TSB Script",
+   Name = "Extra TSB Script",
    Callback = function()
-      toggles["Another TSB Script"] = not toggles["Another TSB Script"]
-      if toggles["Another TSB Script"] then
+      if not toggles.TSB2 then
+         toggles.TSB2 = true
          loadstring(game:HttpGet("https://raw.githubusercontent.com/ATrainz/Phantasm/main/Games/TSB.lua"))()
       end
    end,
@@ -147,8 +162,8 @@ local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
 GardenTab:CreateButton({
    Name = "Garden Script",
    Callback = function()
-      toggles["Garden Script"] = not toggles["Garden Script"]
-      if toggles["Garden Script"] then
+      if not toggles.Garden then
+         toggles.Garden = true
          loadstring(game:HttpGet("https://raw.githubusercontent.com/tesghg/Grow-a-Garden/main/ameicaa_Grow_A_Garden.lua"))()
       end
    end,
