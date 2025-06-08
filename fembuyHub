@@ -47,8 +47,6 @@ local toggles = {
    HighlightToggle = false,
 }
 
-local cachedPositions = {}
-
 -- ======= Highlight Function =======
 local function toggleHighlight(enable)
     for _, player in pairs(Players:GetPlayers()) do
@@ -83,7 +81,7 @@ local function killAllPlayers()
     end
 end
 
--- ======= Teleport All to You (cache original positions) =======
+-- ======= Teleport All to You (instantly change everyone’s position) =======
 local function teleportAllToMe()
     local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then
@@ -95,21 +93,16 @@ local function teleportAllToMe()
         return
     end
 
-    cachedPositions = {} -- clear old cache
-
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local humRoot = player.Character.HumanoidRootPart
-            cachedPositions[player.Name] = humRoot.CFrame -- store original position
-
-            -- teleport slightly above you to avoid clipping
-            humRoot.CFrame = root.CFrame + Vector3.new(0, 5, 0)
+            humRoot.CFrame = root.CFrame + Vector3.new(0, 5, 0) -- teleport 5 studs above local player
         end
     end
 
     Rayfield:Notify({
         Title = "Teleport Complete",
-        Content = "All players teleported to you and their original positions cached.",
+        Content = "All players teleported to you!",
         Duration = 5
     })
 end
@@ -145,13 +138,12 @@ local function setPlayerSize(size)
     if localPlayer.Character then
         for _, part in pairs(localPlayer.Character:GetChildren()) do
             if part:IsA("BasePart") then
+                -- Store original size if needed or just scale relative to original size
                 part.Size = part.Size.Unit * size
             end
         end
     end
 end
-
--- Some players may have accessories that won't scale properly, this is a basic approach.
 
 -- ===== Tabs =====
 
@@ -217,10 +209,11 @@ PlayerTab:CreateSlider({
    Suffix = "x",
    CurrentValue = 1,
    Callback = function(value)
-       -- Scale character parts
        if localPlayer.Character then
            for _, part in pairs(localPlayer.Character:GetChildren()) do
                if part:IsA("BasePart") then
+                   -- Scale relative to original size is more complex,
+                   -- here just scales current size (may cause odd results if used repeatedly)
                    part.Size = part.Size.Unit * value
                end
            end
@@ -229,7 +222,7 @@ PlayerTab:CreateSlider({
 })
 
 PlayerTab:CreateButton({
-   Name = "Teleport Everyone To Me (Cache Positions)",
+   Name = "Teleport Everyone To Me",
    Callback = function()
        teleportAllToMe()
    end,
