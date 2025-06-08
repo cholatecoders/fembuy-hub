@@ -166,6 +166,17 @@ PlayerTab:CreateSlider({
 local TSBTab = Window:CreateTab("TSB", 17205450457)
 
 TSBTab:CreateButton({
+   Name = "Spooks hub",
+   Callback = function()
+      if not toggles.Phantasm then
+         toggles.Phantasm = true
+         loadstring(game:HttpGet('https://raw.githubusercontent.com/ApparentlySpooks/spookshubTSB/refs/heads/main/SHTSB.txt'))()
+      end
+   end,
+})
+
+
+TSBTab:CreateButton({
    Name = "Trashcan man",
    Callback = function()
       if not toggles.Phantasm then
