@@ -130,17 +130,6 @@ HomeTab:CreateButton({
 })
 
 
-local AzureTab = Window:CreateTab("Azure", 17205450457)
-
-AzureTab:CreateButton({
-   Name = "azure",
-   Callback = function()
-      if not toggles.InfYield then
-         toggles.InfYield = true
-        loadstring(game:HttpGet("https://rawscripts.net/raw/BEASTS-UPDATE-Azure-Latch-Azure-Latch-Script-OP-39326"))()
-   end,
-})
-
 -- PLAYER TAB
 local PlayerTab = Window:CreateTab("Player", 17205450457)
 
@@ -245,6 +234,17 @@ ESPTab:CreateToggle({
             end
          end
       end
+   end,
+})
+
+
+-- AZURE TAB
+local AzureTab = Window:CreateTab("Azure", 17205450457)
+
+AzureTab:CreateButton({
+   Name = "Azure OP",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/BEASTS-UPDATE-Azure-Latch-Azure-Latch-Script-OP-39326"))()
    end,
 })
 
