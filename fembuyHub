@@ -105,20 +105,18 @@ end
 local function setPlayerSize(scale)
    if not localPlayer.Character then return end
    local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
-   if humanoid then
-      -- Use Humanoid properties to scale the character safely
-      -- These work on R15 rigs
+   if humanoid and humanoid:FindFirstChild("BodyHeightScale") and humanoid:FindFirstChild("BodyWidthScale") and humanoid:FindFirstChild("BodyDepthScale") and humanoid:FindFirstChild("HeadScale") then
       humanoid.BodyHeightScale.Value = scale
       humanoid.BodyWidthScale.Value = scale
       humanoid.BodyDepthScale.Value = scale
       humanoid.HeadScale.Value = scale
    else
-      -- Fallback: if no Humanoid or no scale properties, try scaling parts cautiously (not recommended)
       Rayfield:Notify({
          Title = "Warning",
-         Content = "Humanoid scales not found; size change may cause glitches.",
+         Content = "Humanoid scale values not found; size change may cause glitches.",
          Duration = 5
       })
+      -- fallback: scaling parts, but can cause issues
       for _, part in pairs(localPlayer.Character:GetChildren()) do
          if part:IsA("BasePart") then
             part.Size = part.Size * scale
@@ -148,18 +146,6 @@ HomeTab:CreateButton({
 
 -- PLAYER TAB
 local PlayerTab = Window:CreateTab("Player", 17205450457)
-
-local Slider = MainTab:CreateSlider({
-   Name = "WalkSpeed",
-   Range = {0, 300},
-   Increment = 1,
-   Suffix = "Speed",
-   CurrentValue = 16,
-   Flag = "Slider1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Value)
-        Game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = (value)
-   end,
-})
 
 PlayerTab:CreateButton({
    Name = "Invisible Script",
@@ -272,4 +258,3 @@ TrollTab:CreateButton({
       })
    end,
 })
-
