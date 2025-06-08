@@ -41,43 +41,60 @@ local toggles = {
    Phantasm = false,
    TSBExtra = false,
    Garden = false,
-   ESPEnabled = false
+   ESPEnabled = false,
+   HighlightToggle = false
 }
 
--- Function: Highlight (ESP) all players
-local function highlightPlayers()
-   for _, player in pairs(game.Players:GetPlayers()) do
-      if player ~= game.Players.LocalPlayer and player.Character then
-         if not player.Character:FindFirstChild("ESPBox") then
-            local highlight = Instance.new("Highlight")
-            highlight.Name = "ESPBox"
-            highlight.FillColor = Color3.fromRGB(255, 0, 255)
-            highlight.FillTransparency = 0.6
-            highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-            highlight.OutlineTransparency = 0
-            highlight.Adornee = player.Character
-            highlight.Parent = player.Character
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+-- Highlight toggle function
+local function highlightPlayers(enable)
+   for _, player in pairs(Players:GetPlayers()) do
+      if player ~= localPlayer and player.Character then
+         local existingHighlight = player.Character:FindFirstChild("ESPBox")
+         if enable then
+            if not existingHighlight then
+               local highlight = Instance.new("Highlight")
+               highlight.Name = "ESPBox"
+               highlight.FillColor = Color3.fromRGB(255, 0, 255)
+               highlight.FillTransparency = 0.6
+               highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+               highlight.OutlineTransparency = 0
+               highlight.Adornee = player.Character
+               highlight.Parent = player.Character
+            end
+         else
+            if existingHighlight then
+               existingHighlight:Destroy()
+            end
          end
       end
    end
 end
 
--- Function: Kill all players
+-- Kill all players (client-side damage)
 local function killAllPlayers()
-   for _, player in pairs(game.Players:GetPlayers()) do
-      if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
+   for _, player in pairs(Players:GetPlayers()) do
+      if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Humanoid") then
          player.Character.Humanoid:TakeDamage(9999)
       end
    end
 end
 
--- Function: Teleport all players to you (once)
+-- Teleport all players to you once
 local function teleportAllToMe()
-   local localPlayer = game.Players.LocalPlayer
    local root = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-   if not root then return end
+   if not root then
+      Rayfield:Notify({
+         Title = "Error",
+         Content = "Your character or HumanoidRootPart not found!",
+         Duration = 5
+      })
+      return
+   end
 
-   for _, player in pairs(game.Players:GetPlayers()) do
+   for _, player in pairs(Players:GetPlayers()) do
       if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
          player.Character.HumanoidRootPart.CFrame = root.CFrame + Vector3.new(0, 5, 0)
       end
@@ -122,7 +139,6 @@ PlayerTab:CreateButton({
    end,
 })
 
--- Speed control
 local currentSpeed = 16
 PlayerTab:CreateSlider({
    Name = "Walk Speed",
@@ -132,14 +148,12 @@ PlayerTab:CreateSlider({
    CurrentValue = currentSpeed,
    Callback = function(Value)
       currentSpeed = Value
-      local player = game.Players.LocalPlayer
-      if player.Character and player.Character:FindFirstChild("Humanoid") then
-         player.Character.Humanoid.WalkSpeed = currentSpeed
+      if localPlayer.Character and localPlayer.Character:FindFirstChild("Humanoid") then
+         localPlayer.Character.Humanoid.WalkSpeed = currentSpeed
       end
    end,
 })
 
--- Reapply speed on respawn
 game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
    char:WaitForChild("Humanoid").WalkSpeed = currentSpeed
 end)
@@ -167,13 +181,17 @@ TSBTab:CreateButton({
    end,
 })
 
-TSBTab:CreateButton({
+-- Added Highlight toggle button (toggle)
+TSBTab:CreateToggle({
    Name = "Highlight All Players",
-   Callback = function()
-      highlightPlayers()
+   CurrentValue = false,
+   Flag = "HighlightToggle",
+   Callback = function(value)
+      toggles.HighlightToggle = value
+      highlightPlayers(value)
       Rayfield:Notify({
-         Title = "ESP Enabled",
-         Content = "All players now highlighted.",
+         Title = value and "ESP Enabled" or "ESP Disabled",
+         Content = value and "All players now highlighted." or "Highlight removed.",
          Duration = 4
       })
    end,
@@ -213,4 +231,3 @@ TrollTab:CreateButton({
       })
    end,
 })
-
