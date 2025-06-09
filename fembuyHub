@@ -265,7 +265,7 @@ local AzureTab = Window:CreateTab("Azure", 17205450457)
 AzureTab:CreateButton({
    Name = "Azure OP",
    Callback = function()
-      loadstring(game:HttpGet("https://rawscripts.net/raw/BEASTS-UPDATE-Azure-Latch-Azure-Latch-Script-OP-39326"))()
+      loadstring(game:HttpGet('https://raw.githubusercontent.com/mokaEZF/Ez/refs/heads/main/aura'))()
    end,
 })
 
