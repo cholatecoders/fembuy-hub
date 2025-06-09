@@ -269,6 +269,19 @@ AzureTab:CreateButton({
    end,
 })
 
+
+local MicTab = Window:CreateTab("Mic", 17205450457)
+
+MicTab:CreateButton({
+   Name = "animations hub(key is pizza, and has runaway) only in mic up games",
+   Callback = function()
+     --[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+loadstring(game:HttpGet("https://www.ghostbin.cloud/x2bhh/raw"))()
+   end,
+})
+
 -- MISC TAB
 local MiscTab = Window:CreateTab("Misc", 17205450457)
 
