@@ -218,6 +218,13 @@ TSBTab:CreateButton({
    end,
 })
 
+
+
+local blueTab = Window:CreateTab("BlueL", 17205450457)
+
+
+
+
 -- GARDEN TAB
 local GardenTab = Window:CreateTab("Grow a Garden", 17205450457)
 
